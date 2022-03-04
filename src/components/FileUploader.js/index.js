@@ -1,23 +1,9 @@
 import { useEffect, useState } from "react";
 import { useRef } from "react";
 import styled from "styled-components";
+import Success from "../Success";
 
-const Box = styled.div`
-  background-color: #ffffff;
-  width: 402px;
-  height: 469px;
-  font-family: "Poppins", sans-serif;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  input {
-    display: none;
-  }
-`;
-
-const Header = styled.div`
+export const Header = styled.div`
   font-family: Poppins;
   font-style: normal;
   font-weight: 500;
@@ -25,7 +11,6 @@ const Header = styled.div`
   line-height: 27px;
   letter-spacing: -0.035em;
   color: #4f4f4f;
-  padding-top: 32px;
 `;
 
 const Instructions = styled.div`
@@ -70,7 +55,7 @@ const DropText = styled.div`
   }};
 `;
 
-const Button = styled.div`
+export const Button = styled.div`
   background: #2f80ed;
   border-radius: 8px;
   font-family: Poppins;
@@ -90,7 +75,8 @@ function FileUploader() {
   const uploadInput = useRef();
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("Or");
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
 
   useEffect(() => {
     if (message !== "Or") {
@@ -124,7 +110,8 @@ function FileUploader() {
   };
 
   const handleUpload = async () => {
-    const url = "http://localhost:3333/photos/upload";
+    console.log(process.env.REACT_APP_REMOTE)
+    const url = process.env.REACT_APP_REMOTE + "/photos/upload";
     const formData = new FormData();
     formData.append("file", file);
 
@@ -134,31 +121,34 @@ function FileUploader() {
     }).catch((err) => alert("File Upload Error"));
 
     if (response.status === 201) {
-      setMessage("Sucess!");
+      const { filename } = await response.json();
+      setSuccess(true);
+      setNewFileName(filename);
     }
   };
-  return (
-    <Box
-      onDrop={() => {
-        return false;
-      }}
-    >
-      <Header>Upload your image</Header>
-      <Instructions>File should be Jpeg or Png... </Instructions>
-      <Drop
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          handleInput(e);
-        }}
-      >
-        <img src="/image.svg" alt="file upload" />
-        <DropText>Drag and Drop images here</DropText>
-      </Drop>
-      {file ? <DropText>{file.name}</DropText> : <DropText message={message}>{message}</DropText>}
-      {file ? <Button onClick={handleUpload}>Upload</Button> : <Button onClick={loadClick}>Choose a file</Button>}
-      <input type="file" name="filename" ref={uploadInput} onChange={(e) => handleInput(e)} accept="image/png, image/jpeg" />
-    </Box>
-  );
+
+  if (success) {
+    return <Success newFileName={newFileName}/>
+  } else {
+    return (
+      <>
+        <Header>Upload your image</Header>
+        <Instructions>File should be Jpeg or Png... </Instructions>
+        <Drop
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            handleInput(e);
+          }}
+        >
+          <img src="/image.svg" alt="file upload" />
+          <DropText>Drag and Drop images here</DropText>
+        </Drop>
+        {file ? <DropText>{file.name}</DropText> : <DropText message={message}>{message}</DropText>}
+        {file ? <Button onClick={handleUpload}>Upload</Button> : <Button onClick={loadClick}>Choose a file</Button>}
+        <input type="file" name="filename" ref={uploadInput} onChange={(e) => handleInput(e)} accept="image/png, image/jpeg" />
+      </>
+    );
+  }
 }
 
 export default FileUploader;
